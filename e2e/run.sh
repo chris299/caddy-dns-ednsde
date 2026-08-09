@@ -28,6 +28,11 @@ CERT_TIMEOUT=${E2E_CERT_TIMEOUT:-900}
 RUN_DIR=./run
 CADDY=./caddy
 
+EDNS_API=${EDNS_API:-https://dns-challenge.edns.de}
+# 43 characters, matching the shape of a real ACME digest, and certain never to
+# exist in any zone.
+PREFLIGHT_VALUE=preflight0000000000000000000000000000000000
+
 log()  { printf '\n\033[1m== %s ==\033[0m\n' "$*"; }
 fail() { printf '\033[31mFEHLGESCHLAGEN: %s\033[0m\n' "$*" >&2; exit 1; }
 
@@ -46,13 +51,51 @@ cleanup() {
 	sleep 3
 	[ -n "$proxy_pid" ] && wait "$proxy_pid" 2>/dev/null || true
 	[ -n "$backend_pid" ] && wait "$backend_pid" 2>/dev/null || true
-	if [ $status -ne 0 ] && [ -f "$RUN_DIR/proxy.log" ]; then
+	# Only dump the log if this run actually started a proxy. Failing earlier --
+	# in the preflight, say -- would otherwise print a stale log from a previous
+	# run and send the reader chasing the wrong problem.
+	if [ $status -ne 0 ] && [ -n "$proxy_pid" ] && [ -f "$RUN_DIR/proxy.log" ]; then
 		echo "--- letzte 40 Zeilen aus proxy.log ---"
 		tail -40 "$RUN_DIR/proxy.log"
 	fi
 	exit $status
 }
 trap cleanup EXIT
+
+# Fail fast on a bad token. Without this, a wrong or unassigned access token
+# looks exactly like slow propagation: Caddy retries quietly and the script sits
+# here for the full certificate timeout before anyone sees the 401. Removing a
+# challenge value that cannot exist is answered with result_code 5 and changes
+# nothing in the zone, which makes it a free credentials check.
+log "Zugangsdaten gegen die eDNS-API prüfen"
+preflight=$(curl -sS --max-time 20 -w '\n%{http_code}' -X POST "$EDNS_API" \
+	-H "Content-Type: application/json" \
+	-H "X-API-TOKEN: $EDNS_TOKEN" \
+	-d "{\"action\":\"removeChallengeRecord\",\"domain\":\"$ZONE\",\"subdomain\":\"_acme-challenge.preflight\",\"challenge_token\":\"$PREFLIGHT_VALUE\"}") \
+	|| fail "die eDNS-Challenge-API unter $EDNS_API ist nicht erreichbar"
+
+preflight_status=$(printf '%s' "$preflight" | tail -n 1)
+preflight_body=$(printf '%s' "$preflight" | sed '$d')
+
+case "$preflight_status" in
+	200)
+		echo "  Token ist gültig und der Zone $ZONE zugewiesen."
+		;;
+	401)
+		fail "eDNS lehnt den Access-Token für $ZONE ab (HTTP 401).
+  Die API unterscheidet nicht zwischen einem ungültigen Token und einem, de
+  dieser Zone nicht zugewiesen ist. Prüfe beides:
+    1. Ist EDNS_TOKEN korrekt gesetzt? Lokal aus der .env, in CI als Secret.
+       Ein häufiger Fehler ist ein Secret, das versehentlich den Wert '-' trägt,
+       weil 'gh secret set --body -' das Minuszeichen als Wert nimmt statt von
+       stdin zu lesen. Richtig ist: printf '%s' \"\$TOKEN\" | gh secret set EDNS_TOKEN
+    2. Ist der Token in der Zone auf dem Reiter DNS-01-Challenge ausgewählt?
+  Antwort der API: $preflight_body"
+		;;
+	*)
+		fail "unerwartete Antwort der eDNS-API (HTTP $preflight_status): $preflight_body"
+		;;
+esac
 
 log "Caddy mit dem ednsde-Modul bauen"
 rm -rf "$RUN_DIR"

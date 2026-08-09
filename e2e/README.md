@@ -10,14 +10,19 @@ This shows that Let's Encrypt agreed.
 
 ## What it does
 
-1. Builds Caddy with `xcaddy`, taking this module from the working tree — so the
+1. Checks the access token before doing anything else, by asking eDNS to remove
+   a challenge value that cannot exist. That is answered with `result_code 5`
+   and changes nothing, so it is a free credentials check — and it turns a
+   wrong or unassigned token into a one-second failure with a readable message
+   instead of a fifteen-minute wait that looks like slow propagation.
+2. Builds Caddy with `xcaddy`, taking this module from the working tree — so the
    test covers uncommitted changes. If `libdns-ednsde` happens to be checked out
    next to this repository, it is taken from there too; otherwise the published
    version is used.
-2. Verifies `dns.providers.ednsde` is actually registered in the binary.
-3. Starts a **backend** Caddy on port 8081 that answers a fixed string over
+3. Verifies `dns.providers.ednsde` is actually registered in the binary.
+4. Starts a **backend** Caddy on port 8081 that answers a fixed string over
    plain HTTP.
-4. Starts the **proxy** Caddy on port 8443, which requests two certificates —
+5. Starts the **proxy** Caddy on port 8443, which requests two certificates —
    one for a plain host (`vault.winkler.tel`) and one for a wildcard placed a
    level below it (`*.e2e.winkler.tel`).
 
@@ -27,10 +32,10 @@ This shows that Let's Encrypt agreed.
    earlier version of this test did. The two names also exercise two different
    shapes in the provider: a single-label subdomain
    (`_acme-challenge.vault`) and a multi-label one (`_acme-challenge.e2e`).
-5. Waits until each name serves the backend's answer over HTTPS.
-6. Checks the certificate actually presented for each name: issued by the
+6. Waits until each name serves the backend's answer over HTTPS.
+7. Checks the certificate actually presented for each name: issued by the
    Let's Encrypt **staging** CA, and carrying the expected SAN.
-7. Confirms the response body came from the backend, not from the proxy.
+8. Confirms the response body came from the backend, not from the proxy.
 
 ## Why no Docker
 
