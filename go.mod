@@ -5,7 +5,7 @@ go 1.25.1
 require (
 	github.com/caddyserver/caddy/v2 v2.11.4
 	github.com/caddyserver/certmagic v0.25.3
-	github.com/chris299/libdns-ednsde v0.1.0
+	github.com/chris299/libdns-ednsde v0.1.1
 )
 
 require (

@@ -10,8 +10,8 @@ github.com/caddyserver/zerossl v0.1.5 h1:dkvOjBAEEtY6LIGAHei7sw2UgqSD6TrWweXpV7l
 github.com/caddyserver/zerossl v0.1.5/go.mod h1:CxA0acn7oEGO6//4rtrRjYgEoa4MFw/XofZnrYwGqG4=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
-github.com/chris299/libdns-ednsde v0.1.0 h1:DBcTwvjkv5ajUKCPVGL0e35GGo9OHmSn92k94Ll8Vqo=
-github.com/chris299/libdns-ednsde v0.1.0/go.mod h1:L/sViHqpPPqabM6zbhMNDe5UGz3Sh7DXJ4U9la79f50=
+github.com/chris299/libdns-ednsde v0.1.1 h1:+zTN3NrYZ5ZuTYL+MhjrXiMc5WKXTpRrI/o92DtVWa0=
+github.com/chris299/libdns-ednsde v0.1.1/go.mod h1:L/sViHqpPPqabM6zbhMNDe5UGz3Sh7DXJ4U9la79f50=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-jose/go-jose/v4 v4.1.4 h1:moDMcTHmvE6Groj34emNPLs/qtYXRVcd6S7NHbHz3kA=
