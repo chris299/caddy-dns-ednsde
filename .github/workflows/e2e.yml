@@ -49,7 +49,11 @@ jobs:
 
       - name: upload Caddy logs
         if: always()
-        uses: actions/upload-artifact@v4
+        # v7, not v4: everything below v6 declares `runs.using: node20`, which
+        # the runners no longer provide and now force onto Node 24 with a
+        # deprecation warning. v6 raised the minimum runner to 2.327.1, which
+        # GitHub-hosted runners satisfy.
+        uses: actions/upload-artifact@v7
         with:
           name: caddy-logs
           path: e2e/run/*.log
