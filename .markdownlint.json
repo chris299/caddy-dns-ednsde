@@ -1,0 +1,4 @@
+{
+	"$comment": "Caddyfile samples are indented with tabs because that is what `caddy fmt` produces; copying them out of the docs should give canonical config.",
+	"MD010": { "code_blocks": false }
+}

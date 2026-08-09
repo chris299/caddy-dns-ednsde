@@ -1,0 +1,56 @@
+name: End-to-end
+
+# Deliberately manual. This obtains real certificates from Let's Encrypt
+# staging and writes challenge records into a real, production DNS zone -- there
+# is no separate test zone. Running it on every push would put the eDNS access
+# token into every build and leave stray records behind on cancelled runs.
+on:
+  workflow_dispatch:
+    inputs:
+      zone:
+        description: The eDNS zone to obtain certificates for
+        required: true
+        default: winkler.tel
+      host:
+        description: The host name to test (must be inside the zone)
+        required: true
+        default: vault.winkler.tel
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: install xcaddy
+        run: go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+
+      - name: run the end-to-end test
+        env:
+          EDNS_TOKEN: ${{ secrets.EDNS_TOKEN }}
+          E2E_ZONE: ${{ inputs.zone }}
+          E2E_HOST: ${{ inputs.host }}
+          E2E_WILDCARD: "*.e2e.${{ inputs.zone }}"
+          E2E_WILDCARD_HOST: probe.e2e.${{ inputs.zone }}
+        run: |
+          if [ -z "$EDNS_TOKEN" ]; then
+            echo "The EDNS_TOKEN repository secret is not set."
+            exit 1
+          fi
+          ./e2e/run.sh
+
+      - name: upload Caddy logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caddy-logs
+          path: e2e/run/*.log
+          if-no-files-found: ignore

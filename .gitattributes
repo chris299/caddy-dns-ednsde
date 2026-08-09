@@ -1,0 +1,4 @@
+# This module is developed on Windows but built and tested on Linux. Pin LF so
+# the working copy matches the repository regardless of the checkout platform,
+# and so the shell scripts under e2e/ stay executable there.
+* text=auto eol=lf

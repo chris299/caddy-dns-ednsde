@@ -1,0 +1,61 @@
+# The instance under test: a reverse proxy that obtains its certificates from
+# Let's Encrypt *staging* through the ACME DNS-01 challenge, solved by the
+# ednsde module. Nothing here needs an inbound connection from the internet --
+# that is the whole point of DNS-01 -- so it binds to high ports and is reached
+# through curl --resolve.
+{
+	admin off
+	persist_config off
+	http_port 8080
+	https_port 8443
+
+	email cwinkler@vme.de
+	acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+
+	storage file_system {
+		root ./run/caddy-data
+	}
+
+	log {
+		output file ./run/proxy.log
+		level INFO
+	}
+}
+
+(ednsde_tls) {
+	tls {
+		dns ednsde {env.EDNS_TOKEN}
+
+		# Measured against winkler.tel: a challenge record on a name that did
+		# not exist before becomes visible on all authoritative nameservers
+		# after about 23 seconds. Waiting first avoids a burst of lookups that
+		# cannot yet succeed.
+		propagation_delay 30s
+
+		# Ten minutes, not the two-minute default, and not five. A name that has
+		# never existed is answered with NXDOMAIN, and that negative answer is
+		# cached for the zone's SOA minimum -- 300s on winkler.tel. Until it
+		# expires, the propagation check cannot resolve the name's authoritative
+		# servers and keeps reporting "not yet". A measured run with a
+		# five-minute timeout failed the first attempt at exactly 300s and then
+		# succeeded 40s into the retry. This timeout lets the first attempt win
+		# instead, and it is why the zone's SOA minimum must be kept low.
+		propagation_timeout 10m
+	}
+}
+
+# A plain host. The challenge lands on _acme-challenge.vault.winkler.tel, so the
+# module has to send a single-label subdomain.
+vault.winkler.tel:8443 {
+	import ednsde_tls
+	reverse_proxy 127.0.0.1:8081
+}
+
+# A wildcard, deliberately one level down so that it does NOT cover the host
+# above -- otherwise Caddy would obtain a single certificate for both and the
+# non-wildcard path would never be exercised. The challenge lands on
+# _acme-challenge.e2e.winkler.tel, a multi-label subdomain.
+*.e2e.winkler.tel:8443 {
+	import ednsde_tls
+	reverse_proxy 127.0.0.1:8081
+}

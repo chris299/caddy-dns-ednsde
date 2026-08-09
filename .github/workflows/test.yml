@@ -1,0 +1,44 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt-clean:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test -race ./...
+
+      # Proves the module can actually be plugged into Caddy and registers
+      # under the expected ID. This catches breakage that unit tests cannot,
+      # such as an incompatible libdns or certmagic version.
+      - name: build Caddy with this module
+        run: |
+          go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+          xcaddy build --with github.com/chris299/caddy-dns-ednsde="$PWD" --output ./caddy
+          ./caddy list-modules | grep -q '^dns.providers.ednsde$'
+          echo "dns.providers.ednsde is registered."

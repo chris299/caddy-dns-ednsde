@@ -1,0 +1,17 @@
+# Go workspace files belong to the developer's checkout, not to the module.
+go.work
+go.work.sum
+
+# Caddy binaries built by xcaddy for the end-to-end test.
+/e2e/caddy
+/e2e/caddy.exe
+
+# Runtime state the end-to-end test produces (includes ACME account keys).
+/e2e/run/
+
+# Editors
+.idea/
+.vscode/
+
+# Never commit credentials.
+.env
