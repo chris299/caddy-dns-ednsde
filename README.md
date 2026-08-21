@@ -1,4 +1,14 @@
-# caddy-dns-ednsde
+# caddy-dns-ednsde — moved
+
+> **This repository is archived.** The module now lives at
+> **[caddy-dns/ednsde](https://github.com/caddy-dns/ednsde)** as
+> `github.com/caddy-dns/ednsde`, maintained inside the caddy-dns organisation,
+> and the libdns provider behind it at
+> **[libdns/ednsde](https://github.com/libdns/ednsde)**.
+>
+> Build with `xcaddy build --with github.com/caddy-dns/ednsde` from now on.
+> Nothing here is maintained any more; the history is kept because the old module
+> path still resolves for anyone who has it in a `go.mod`.
 
 A [Caddy](https://caddyserver.com) DNS module for **eDNS** ([edns.de](https://edns.de)),
 so Caddy can obtain certificates through the ACME **DNS-01** challenge — including
